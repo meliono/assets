@@ -201,14 +201,14 @@ do
             _id = id,
             __OBJECT_EXISTS = true,
             _properties = {
-                Color = _color3new(),
+                Color = _color3new(1,1,1),
                 Filled = false,
-                NumSides = 60,
-                Position = _vector2new(),
-                Radius = 50,
+                NumSides = 120,
+                Position = _vector2new(0,0),
+                Radius = 100,
                 Thickness = 1,
                 Transparency = 1,
-                Visible = false,
+                Visible = true,
                 ZIndex = 0
             },
             _lines = {}
@@ -284,7 +284,6 @@ do
     circle.Remove = circle.Destroy
     classes.Circle = circle
 end
-
 	do
 		local enumToFont = {
 			[drawing.Fonts.UI] = Font.new("rbxasset://fonts/families/Arial.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
