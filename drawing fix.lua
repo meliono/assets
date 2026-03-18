@@ -190,118 +190,100 @@ do
 		classes.Line = line;
 	end
 
-	do
-		local circle = {};
+do
+    local circle = {}
 
-		function circle.new()
-			itemCounter = itemCounter + 1;
-			local id = itemCounter;
+    function circle.new()
+        itemCounter = itemCounter + 1
+        local id = itemCounter
 
-			local newCircle = _setmetatable({
-				_id = id,
-				__OBJECT_EXISTS = true,
-				_properties = {
-					Color = _color3new(),
-					Filled = false,
-					NumSides = 0,
-					Position = _vector2new(),
-					Radius = 0,
-					Thickness = 1,
-					Transparency = 1,
-					Visible = false,
-					ZIndex = 0
-				},
-				_frame = create("Frame", {
-					Name = id,
-					AnchorPoint = _vector2new(0.5, 0.5),
-					BackgroundColor3 = _color3new(),
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					Parent = drawingDirectory,
-					Position = _udim2new(),
-					Size = _udim2new(),
-					Visible = false,
-					ZIndex = 0
-				}, {
-					create("UICorner", {
-						Name = "_corner",
-						CornerRadius = _udimnew(1, 0)
-					}),
-					create("UIStroke", {
-						Name = "_stroke",
-						Color = _color3new(),
-						Thickness = 1,
-					})
-				})
-			}, circle);
+        local newCircle = _setmetatable({
+            _id = id,
+            __OBJECT_EXISTS = true,
+            _properties = {
+                Color = _color3new(),
+                Filled = false,
+                NumSides = 60,
+                Position = _vector2new(),
+                Radius = 50,
+                Thickness = 1,
+                Transparency = 1,
+                Visible = false,
+                ZIndex = 0
+            },
+            _lines = {}
+        }, circle)
 
-			cache[id] = newCircle;
-			return newCircle;
-		end
+        for i = 1, newCircle._properties.NumSides do
+            newCircle._lines[i] = classes.Line.new()
+        end
 
-		function circle:__index(k)
-			local prop = self._properties[k];
-			if prop ~= nil then
-				return prop;
-			end
-			return circle[k];
-		end
+        cache[id] = newCircle
+        return newCircle
+    end
 
-		function circle:__newindex(k, v)
-			if self.__OBJECT_EXISTS == true then
-				local props = self._properties;
-				if props[k] == nil or props[k] == v or typeof(props[k]) ~= typeof(v) then
-					return;
-				end
-				props[k] = v;
-				if k == "Color" then
-					self._frame.BackgroundColor3 = v;
-					self._frame._stroke.Color = v;
-				elseif k == "Filled" then
-					self._frame.BackgroundTransparency = v and 1 - props.Transparency or 1;
-				elseif k == "Position" then
-					self._frame.Position = _udim2fromoffset(v.X, v.Y);
-				elseif k == "Radius" then
-					self:_updateRadius();
-				elseif k == "Thickness" then
-					self._frame._stroke.Thickness = _mathmax(v, 1);
-					self:_updateRadius();
-				elseif k == "Transparency" then
-					self._frame._stroke.Transparency = 1 - v;
-					if props.Filled then
-						self._frame.BackgroundTransparency = 1 - v;
-					end
-				elseif k == "Visible" then
-					self._frame.Visible = v;
-				elseif k == "ZIndex" then
-					self._frame.ZIndex = v;
-				end
-			end
-		end
+    function circle:__index(k)
+        local prop = self._properties[k]
+        if prop ~= nil then
+            return prop
+        end
+        return circle[k]
+    end
 
-		function circle:__iter()
-			return next, self._properties;
-		end
+    function circle:__newindex(k, v)
+        if not self.__OBJECT_EXISTS then return end
 
-		function circle:__tostring()
-			return "Drawing";
-		end
+        local props = self._properties
+        if props[k] == nil then return end
 
-		function circle:Destroy()
-			cache[self._id] = nil;
-			self.__OBJECT_EXISTS = false;
-			_destroy(self._frame);
-		end
+        props[k] = v
 
-		function circle:_updateRadius()
-			local props = self._properties;
-			local diameter = (props.Radius * 2) - (props.Thickness * 2);
-			self._frame.Size = _udim2fromoffset(diameter, diameter);
-		end
+        if k == "Radius" or k == "Position" or k == "NumSides" then
+            self:_update()
+        elseif k == "Color" or k == "Thickness" or k == "Transparency" or k == "Visible" then
+            for _,line in pairs(self._lines) do
+                line.Color = props.Color
+                line.Thickness = props.Thickness
+                line.Transparency = props.Transparency
+                line.Visible = props.Visible
+            end
+        end
+    end
 
-		circle.Remove = circle.Destroy;
-		classes.Circle = circle;
-	end
+    function circle:_update()
+        local props = self._properties
+        local step = (pi * 2) / props.NumSides
+
+        for i = 1, props.NumSides do
+            local a = step * i
+            local b = step * (i + 1)
+
+            local p1 = props.Position + _vector2new(math.cos(a) * props.Radius, math.sin(a) * props.Radius)
+            local p2 = props.Position + _vector2new(math.cos(b) * props.Radius, math.sin(b) * props.Radius)
+
+            local line = self._lines[i]
+            if not line then
+                line = classes.Line.new()
+                self._lines[i] = line
+            end
+
+            line.From = p1
+            line.To = p2
+        end
+    end
+
+    function circle:Destroy()
+        cache[self._id] = nil
+        self.__OBJECT_EXISTS = false
+
+        for _,line in pairs(self._lines) do
+            line:Destroy()
+        end
+    end
+
+    circle.Remove = circle.Destroy
+    classes.Circle = circle
+end
 
 	do
 		local enumToFont = {
